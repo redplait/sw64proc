@@ -158,6 +158,7 @@ void sw64_relocs::apply_relocs()
          case R_SW64_REFQUAD:
          case R_SW64_DTPMOD64:
          case R_SW64_DTPREL64:
+         case R_SW64_GLOB_DAT:
            // reloc to symbol or external
            if ( !fill_fd(fd, offset, symbol, type == R_SW64_REFQUAD) )
            {
@@ -168,7 +169,6 @@ void sw64_relocs::apply_relocs()
            res++;
           break;
          case R_SW64_RELATIVE:
-         case R_SW64_GLOB_DAT:
            // check if such fixup already exists
            if ( exists_fixup(offset) )
              continue;
