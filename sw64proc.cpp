@@ -113,6 +113,43 @@ int is_ld_sw(sw64_insn_type_t op)
   return 0;
 }
 
+int ld_sw_size(sw64_insn_type_t op, op_dtype_t &t)
+{
+  switch(op)
+  {
+    case sw64_flds:
+    case sw64_vlds:
+    case sw64_fsts:
+    case sw64_vsts:
+    case sw64_ldse:
+      t = dt_float;
+      return 1;
+    case sw64_fldd:
+    case sw64_vldd:
+    case sw64_fstd:
+    case sw64_ldde:
+    case sw64_vstd:
+      t = dt_double;
+      return 1;
+    case sw64_ldbu:
+    case sw64_stb:
+      t = dt_byte;
+      return 1;
+    case sw64_ldw:
+    case sw64_lldw:
+    case sw64_stw:
+      t = dt_dword;
+      return 1;
+    default:
+      if ( is_ld_sw(op) )
+      {
+        t = dt_qword;
+        return 1;
+      }
+  }
+  return 0;
+}
+
 int is_sp_based(const insn_t *insn, const op_t *op)
 {
   if ( op->type != o_reg )
