@@ -19,7 +19,7 @@ EOF
     exit (8);
 }
 
-# c is lowest 16 bits in ops, zero is 7
+# c is lowest 8 bits in ops, zero is 7
 sub is_zc
 {
   my $op = shift;
@@ -38,7 +38,7 @@ sub insert_zc
   return $insn | 31;
 }
 
-# b is middle 16 bits, zero is B
+# b is middle 8 bits, zero is B
 sub is_zb
 {
   my $op = shift;
@@ -63,7 +63,7 @@ sub insert_zb
   return $insn | (31 << 16);
 }
 
-# za is 16bit from 8, zero is 9
+# za is 8 bits from 16, zero is 9
 sub get_za
 {
   my $op = shift;
