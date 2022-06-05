@@ -16,6 +16,8 @@ struct sw64_relocs
   int read_symbols();
   void apply_relocs();
   int fill_fd(fixup_data_t &fd, ea_t offset, int symbol, bool force = false);
+  void fill_squad(fixup_data_t &fd, ea_t offset, ea_t addend);
+  void fill_srel32(fixup_data_t &fd, ea_t offset, ea_t addend);
   void make_off(ea_t offset, ea_t target);
   void rename_j(ea_t offset);
 
@@ -95,6 +97,25 @@ void sw64_relocs::rename_j(ea_t offset)
  set_name(f->start_ea, fname.c_str(), SN_AUTO | SN_NOCHECK | SN_PUBLIC);
 }
 
+void sw64_relocs::fill_squad(fixup_data_t &fd, ea_t offset, ea_t added)
+{
+  fd.set_type(FIXUP_OFF64);
+  auto val = get_qword(offset);
+  fd.off = val + added;
+  if ( !val )
+    patch_qword(offset, fd.off);
+  make_off(offset, fd.off);
+}
+
+void sw64_relocs::fill_srel32(fixup_data_t &fd, ea_t offset, ea_t added)
+{
+  fd.set_type(FIXUP_OFF32);
+  auto val = get_dword(offset);
+  fd.off = val + added;
+  patch_dword(offset, fd.off);
+  make_off(offset, fd.off);
+}
+
 int sw64_relocs::fill_fd(fixup_data_t &fd, ea_t offset, int symbol, bool force)
 {
   fd.set_type(FIXUP_OFF64);
@@ -140,8 +161,17 @@ void sw64_relocs::apply_relocs()
   Elf_Half n = reader.sections.size();
   for ( Elf_Half i = 0; i < n; ++i ) { // For all sections
      section* sec = reader.sections[i];
-     if (sec->get_type() != SHT_RELA)
+     int pfx_size = 0;
+     if ( sec->get_type() == SHT_RELA )
+       pfx_size = 5; // .rela
+     else if ( sec->get_type() == SHT_REL )
+       pfx_size = 4; // .rel
+     else
        continue;
+     // get segment
+     segment_t *s = NULL;
+     if ( pfx_size )
+       s = get_segm_by_name( sec->get_name().c_str() + pfx_size ); 
      const_relocation_section_accessor rsa(reader, sec);
      Elf_Xword relno = rsa.get_entries_num();
      total_relocs += relno;
@@ -152,10 +182,27 @@ void sw64_relocs::apply_relocs()
        Elf_Word   type;
        Elf_Sxword addend;
        rsa.get_entry(i, offset, symbol, type, addend );
+       if ( s != NULL )
+       {
+          if ( offset < s->start_ea )
+            offset += s->start_ea;
+       }
        fixup_data_t fd;
        switch(type)
        {
+         case R_SW64_SREL32:
+            fill_srel32(fd, offset, addend);
+            set_fixup(offset, fd);
+            res++;
+            break;         
          case R_SW64_REFQUAD:
+          if ( addend )
+          {
+            fill_squad(fd, offset, addend);
+            set_fixup(offset, fd);
+            res++;
+            break;
+          }
          case R_SW64_DTPMOD64:
          case R_SW64_DTPREL64:
          case R_SW64_GLOB_DAT:
@@ -224,9 +271,24 @@ int sw64_relocs::read_symbols()
       Elf_Xword     size    = 0;
       unsigned char bind    = 0;
       unsigned char type    = 0;
-      Elf_Half      section = 0;
+      Elf_Half      sect_id = 0;
       unsigned char other   = 0;
-      symbols.get_symbol( i, name, value, size, bind, type, section, other );
+      symbols.get_symbol( i, name, value, size, bind, type, sect_id, other );
+      // if bind is local and section != 0 - value is relative to section address
+      if ( bind == STB_LOCAL && sect_id )
+      {
+        section* lsec = reader.sections[sect_id];
+        if ( lsec != NULL )
+          m_symbols[i] = value + lsec->get_address();
+        continue;
+      }
+      if ( bind == STB_GLOBAL && !value && sect_id )
+      {
+        section* lsec = reader.sections[sect_id];
+        if ( lsec != NULL )
+          m_symbols[i] = value + lsec->get_address();
+        continue;
+      }
       if ( value )
         m_symbols[i] = value;
       else if ( !name.empty() )
