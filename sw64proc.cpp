@@ -278,6 +278,15 @@ void emu_insn(const insn_t *insn)
   int is_end = is_sw64_basic_block_end(insn, false);
   if ( !is_end )
     add_cref(insn->ea, insn->ea + insn->size, fl_F);
+  fixup_data_t fd;
+  if ( get_fixup(&fd, insn->ea) )
+  {
+    if ( insn->itype == sw64_call )
+      insn->add_cref(fd.off, 2, fl_CN);
+    else
+      insn->add_dref(fd.off, 0, dr_O);
+    goto sp;
+  }
   if ( is_pv_gp(insn) )
   {
     ea_t ea = insn->ea + (insn->Op3.value << 0x10);
@@ -336,6 +345,7 @@ void emu_insn(const insn_t *insn)
       insn->add_dref(ea, 0, dr_O);
     }
   }
+sp:
   int ssize = 0;
   if ( is_sp_down(insn) )
   {
