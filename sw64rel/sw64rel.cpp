@@ -8,6 +8,8 @@
 #include <name.hpp>
 #include <offset.hpp>
 
+using namespace ELFIO;
+
 struct sw64_relocs
 {
   // This function is called when the user invokes the plugin.
@@ -20,6 +22,7 @@ struct sw64_relocs
   void fill_srel32(fixup_data_t &fd, ea_t offset, ea_t addend);
   void make_off(ea_t offset, ea_t target);
   void rename_j(ea_t offset);
+  int resolve_symbol(ELFIO::Elf_Xword i, Elf_Half sect_id, Elf64_Addr value, std::string &name);
 
   ELFIO::elfio reader;
   std::map<int, ea_t> m_symbols;
@@ -62,8 +65,6 @@ struct sw64_relocs
 #define R_SW64_TPRELLO		40
 #define R_SW64_TPREL16		41
 #define R_SW64_LITERAL_GOT	43	/* GP relative */
-
-using namespace ELFIO;
 
 void sw64_relocs::rename_j(ea_t offset)
 {
@@ -250,6 +251,40 @@ void sw64_relocs::apply_relocs()
   msg("total_relocs %d, processed %d, unknown relocs %d, not found symbols %d\n", total_relocs, res, unknown, not_found);
 }
 
+int sw64_relocs::resolve_symbol(Elf_Xword i, Elf_Half sect_id, Elf64_Addr value, std::string &name)
+{
+  section* lsec = reader.sections[sect_id];
+  if ( lsec == NULL )
+  {
+    msg("cannot find section %d\n", sect_id);
+    return 0;
+  }
+  auto addr = lsec->get_address();
+  if ( addr )
+  {
+    m_symbols[i] = value + addr;
+    return 1;
+  }
+  if ( !name.empty() )
+  {
+     addr = get_name_ea(BADADDR, name.c_str() );
+     if ( addr != BADADDR )
+     {
+       m_symbols[i] = value + addr;
+       return 1;
+     }
+  }
+  // get address from segment
+  segment_t *s = get_segm_by_name( lsec->get_name().c_str() );
+  if ( s != NULL )
+  {
+    addr = s->start_ea;
+    m_symbols[i] = addr + value;
+    return 1;
+  }
+  return 0;
+}
+
 int sw64_relocs::read_symbols()
 {
   int res = 0;
@@ -274,19 +309,30 @@ int sw64_relocs::read_symbols()
       Elf_Half      sect_id = 0;
       unsigned char other   = 0;
       symbols.get_symbol( i, name, value, size, bind, type, sect_id, other );
+      // ignore sections
+      if ( type == STT_SECTION )
+        continue;
       // if bind is local and section != 0 - value is relative to section address
       if ( bind == STB_LOCAL && sect_id )
       {
-        section* lsec = reader.sections[sect_id];
-        if ( lsec != NULL )
-          m_symbols[i] = value + lsec->get_address();
+        if ( !resolve_symbol(i, sect_id, value, name) )
+        {
+          if ( !name.empty() )
+            msg("cannot find local name %s\n", name.c_str());
+          else
+            msg("cannot find local name id %d\n", i);
+        }
         continue;
       }
       if ( bind == STB_GLOBAL && !value && sect_id )
       {
-        section* lsec = reader.sections[sect_id];
-        if ( lsec != NULL )
-          m_symbols[i] = value + lsec->get_address();
+        if ( !resolve_symbol(i, sect_id, value, name) )
+        {
+          if ( !name.empty() )
+            msg("cannot find global name %s\n", name.c_str());
+          else
+            msg("cannot find global name id %d\n", i);
+        }
         continue;
       }
       if ( value )
