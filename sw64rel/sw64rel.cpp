@@ -18,6 +18,7 @@ struct sw64_relocs
   int read_symbols();
   void apply_relocs();
   int fill_fd(fixup_data_t &fd, ea_t offset, int symbol, bool force = false);
+  int fill_literal(fixup_data_t &fd, ea_t offset, int symbol, int addend);
   void fill_squad(fixup_data_t &fd, ea_t offset, ea_t addend);
   void fill_srel32(fixup_data_t &fd, ea_t offset, ea_t addend);
   void make_off(ea_t offset, ea_t target);
@@ -26,6 +27,7 @@ struct sw64_relocs
 
   ELFIO::elfio reader;
   std::map<int, ea_t> m_symbols;
+  std::map<int, std::string> m_sections; // key is id
   std::map<int, std::string> m_external;
   std::string imp;
 };
@@ -117,6 +119,35 @@ void sw64_relocs::fill_srel32(fixup_data_t &fd, ea_t offset, ea_t added)
   make_off(offset, fd.off);
 }
 
+int sw64_relocs::fill_literal(fixup_data_t &fd, ea_t offset, int symbol, int added)
+{
+  fd.set_type(FIXUP_LOW16);
+  if ( added )
+  {
+    fd.off = added;
+    return 1;
+  }
+  auto si = m_symbols.find(symbol);
+  if ( si != m_symbols.end() )
+  {
+    fd.off = si->second;
+    return 1;
+  }
+  auto ei = m_external.find(symbol);
+  if ( ei == m_external.end() )
+  {
+    msg("unknown literal %d\n", symbol);
+    return 0;
+  }
+  fd.off = get_name_ea(BADADDR, ei->second.c_str());
+  if ( fd.off == BADADDR )
+  {
+     msg("unknown literal %d: %s\n", symbol, ei->second.c_str());
+     return 0;
+  }
+  return 1;
+}
+
 int sw64_relocs::fill_fd(fixup_data_t &fd, ea_t offset, int symbol, bool force)
 {
   fd.set_type(FIXUP_OFF64);
@@ -191,6 +222,14 @@ void sw64_relocs::apply_relocs()
        fixup_data_t fd;
        switch(type)
        {
+         case R_SW64_HINT:
+         case R_SW64_LITERAL:
+            if ( fill_literal(fd, offset, symbol, addend) )
+            {
+              set_fixup(offset, fd);
+              res++;
+            }
+           break;
          case R_SW64_SREL32:
             fill_srel32(fd, offset, addend);
             set_fixup(offset, fd);
@@ -311,7 +350,11 @@ int sw64_relocs::read_symbols()
       symbols.get_symbol( i, name, value, size, bind, type, sect_id, other );
       // ignore sections
       if ( type == STT_SECTION )
+      {
+        if ( !name.empty() )
+          m_sections[i] = name;
         continue;
+      }
       // if bind is local and section != 0 - value is relative to section address
       if ( bind == STB_LOCAL && sect_id )
       {
