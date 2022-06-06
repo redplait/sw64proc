@@ -155,9 +155,11 @@ void set_rA_dtype(insn_t *insn)
   ld_sw_size((sw64_insn_type_t)insn->itype, insn->Op1.dtype);
 }
 
-const int SW64_BPF_REG_SP = 30;
+const int SW64_BPF_REG_RA = 26;
 const int SW64_BPF_REG_PV = 27;
 const int SW64_BPF_REG_GP = 29;
+const int SW64_BPF_REG_SP = 30;
+const int SW64_BPF_REG_ZR = 31;
 
 int is_sp_based(const insn_t *insn, const op_t *op)
 {
@@ -202,6 +204,17 @@ bool is_pv_gp(const insn_t *insn)
     );
 }
 
+bool is_ldih_gp_ra(const insn_t *insn)
+{
+  if ( insn->itype != sw64_ldih )
+    return false;
+  return (insn->Op1.type == o_reg &&
+    insn->Op2.type == o_reg &&
+    insn->Op1.reg == SW64_BPF_REG_GP &&
+    insn->Op2.reg == SW64_BPF_REG_RA
+    );
+}
+
 bool is_ldi_gp(const insn_t *insn)
 {
   if ( insn->itype != sw64_ldi )
@@ -237,7 +250,7 @@ bool is_ldih_gp(const insn_t *insn, int reg)
 
 bool is_ldl(const insn_t *insn)
 {
-  if ( insn->itype != sw64_ldl && insn->itype != sw64_ldbu )
+  if ( insn->itype != sw64_ldl && insn->itype != sw64_ldbu && insn->itype != sw64_ldi )
     return false;
   return (insn->Op1.type == o_reg &&
     insn->Op2.type == o_reg);
@@ -294,6 +307,74 @@ int track_back_gp(ea_t curr, ea_t &res)
   return 0;
 }
 
+int track_back_reg(ea_t curr, int reg, ea_t &res)
+{
+  func_item_iterator_t fii(get_func(curr), curr);
+  insn_t prev;
+  res = NULL;
+  int state = 0;
+  int off16 = 0;
+  int ra16 = 0;
+  short off = 0;
+  while ( fii.decode_prev_insn(&prev) )
+  {
+    if ( state && is_pv_gp(&prev) )
+    {
+      res = prev.ea + (prev.Op3.value << 0x10) + off;
+      if ( off16 )
+      {
+        if ( off16 < 0 )
+          res -= (-off16) << 0x10;
+        else
+          res += off16 << 0x10;
+      }
+      return 1;
+    }
+    if ( state && is_ldi_gp(&prev) )
+    {
+      auto val = get_dword(prev.ea);
+      off = (short)(val & 0xffff);
+      continue;
+    }
+    if ( is_ldih_gp(&prev, reg) )
+    {
+      off16 = prev.Op3.value;
+      state = 1;
+      continue;
+    }
+    if ( is_ldih_gp_ra(&prev) )
+    {
+      ra16 = prev.Op3.value;
+      state = 2;
+      continue;
+    }
+    if ( 2 == state && prev.itype == sw64_call )
+    {
+      ea_t ea = prev.ea + 4;
+      if ( ra16 )
+      {
+        if ( ra16 < 0 )
+          ea -= (-ra16) << 0x10;
+        else
+          ea += ra16 << 0x10;
+      }
+      res = ea + off;
+      char comm[64];
+      qsnprintf(comm, sizeof(comm), "%a", ea);
+      set_cmt(prev.ea + 4, comm, false);
+      if ( off16 )
+      {
+        if ( off16 < 0 )
+          res -= (-off16) << 0x10;
+        else
+          res += off16 << 0x10;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void emu_insn(const insn_t *insn)
 {
   segment_t *got = get_segm_by_name(".got");
@@ -345,21 +426,23 @@ void emu_insn(const insn_t *insn)
     {
       ea_t ea = prev.ea + (prev.Op3.value << 0x10) + off;
       qsnprintf(comm, sizeof(comm), "%a", ea);
-      set_cmt(insn->ea, comm, false);    
+      set_cmt(insn->ea, comm, false);
+      goto sp;
     }
-  } else if ( got != NULL && is_ldl(insn) )
+  } 
+  if ( is_ldl(insn) && !is_sp_based(insn) && insn->Op2.reg != SW64_BPF_REG_ZR )
   {
     auto val = get_dword(insn->ea);
     short off = (short)(val & 0xffff);
-    func_item_iterator_t fii(get_func(insn->ea), insn->ea);
-    insn_t prev;
-    if ( fii.decode_prev_insn(&prev) && is_ldih_gp(&prev, insn->Op2.reg) )
+    ea_t gp = NULL;
+    if ( track_back_reg(insn->ea, insn->Op2.reg, gp) )
     {
-      ea_t ea = got->start_ea + off;
+      ea_t ea = gp + off;
       qsnprintf(comm, sizeof(comm), "%a", ea);
       set_cmt(insn->ea, comm, false);    
       // add xref
       insn->add_dref(ea, 0, dr_O);
+      goto sp;
     }
   }
 sp:
