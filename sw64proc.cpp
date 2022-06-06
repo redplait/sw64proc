@@ -264,6 +264,30 @@ bool is_sw64_basic_block_end(const insn_t *insn, bool call_insn_stops_block)
   return false;
 }
 
+bool is_reg_alive(const insn_t *insn, int ridx)
+{
+  uint32 feature = insn->get_canon_feature(ph);
+  if ( feature & CF_CHG1 )
+  {
+    if ( insn->Op1.type == o_reg && insn->Op1.reg == ridx )
+      return false;
+  }
+  return true;
+}
+
+bool is_reg_alive_gp(const insn_t *insn, int ridx)
+{
+  uint32 feature = insn->get_canon_feature(ph);
+  if ( feature & CF_CHG1 )
+  {
+    if ( insn->Op1.type == o_reg && insn->Op1.reg == ridx )
+      return false;
+    if ( insn->Op1.type == o_reg && insn->Op1.reg == SW64_BPF_REG_GP )
+      return false;
+  }
+  return true;
+}
+
 void make_jmp(const insn_t *insn)
 {
   if ( insn->Op1.type == o_far )
@@ -370,6 +394,11 @@ int track_back_reg(ea_t curr, int reg, ea_t &res)
           res += off16 << 0x10;
       }
       return 1;
+    }
+    if ( !state )
+    {
+      if ( !is_reg_alive_gp(&prev, reg) )
+        return 0;
     }
   }
   return 0;

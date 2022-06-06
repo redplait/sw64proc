@@ -335,7 +335,7 @@ const instruc_t Instructions[] = {
  { "fble", CF_USE1 | CF_JUMP }, /* sw64_fble 1704 */
  { "fbgt", CF_USE1 | CF_JUMP }, /* sw64_fbgt 1704 */
  { "fbge", CF_USE1 | CF_JUMP }, /* sw64_fbge 1704 */
- { "ldi", CF_USE2| CF_USE3 }, /* sw64_ldi 81601 */
- { "ldih", CF_USE2| CF_USE3 }, /* sw64_ldih 81601 */
+ { "ldi", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_ldi 81601 */
+ { "ldih", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_ldih 81601 */
  { "unop", 0 }, /* sw64_unop 0 */
 };
