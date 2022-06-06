@@ -285,6 +285,8 @@ void emu_insn(const insn_t *insn)
       insn->add_cref(fd.off, 2, fl_CN);
     else
       insn->add_dref(fd.off, 0, dr_O);
+    qsnprintf(comm, sizeof(comm), "%a", fd.off);
+    set_cmt(insn->ea, comm, false);    
     goto sp;
   }
   if ( is_pv_gp(insn) )

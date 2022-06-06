@@ -7,6 +7,7 @@
 #include <fixup.hpp>
 #include <name.hpp>
 #include <offset.hpp>
+#include <entry.hpp>
 
 using namespace ELFIO;
 
@@ -68,6 +69,17 @@ struct sw64_relocs
 #define R_SW64_TPREL16		41
 #define R_SW64_LITERAL_GOT	43	/* GP relative */
 
+int is_entry(ea_t offset)
+{
+  size_t s = get_entry_qty();
+  for ( size_t idx = 0; idx < s; ++idx )
+  {
+    if ( offset == get_entry(idx) )
+      return 1;
+  }
+  return 0;
+}
+
 void sw64_relocs::rename_j(ea_t offset)
 {
  // first check that we have the only reffered function
@@ -94,6 +106,11 @@ void sw64_relocs::rename_j(ea_t offset)
     return;
  auto f = get_func(prev);
  if ( f == NULL )
+   return;
+ // check if this address already have public name
+ if ( is_public_name(f->start_ea) )
+   return;
+ if ( is_entry(f->start_ea) )
    return;
  qstring fname = "j_";
  fname += imp.c_str();

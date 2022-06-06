@@ -103,6 +103,31 @@ ssize_t idaapi idb_listener_t::on_event(ssize_t code, va_list)
   return 0;
 }
 
+const char *sw64_t::set_idp_options(
+        const char *keyword,
+        int value_type,
+        const void *value,
+        bool idb_loaded)
+{
+  if ( keyword == NULL )
+  {
+    sval_t val = idpflags;
+    bool code = ask_long(&val, "idpflags");
+    if ( !code )
+      return IDPOPT_OK;
+    setflag(idpflags, USE_GOT, *(int*)val != 0);
+    return IDPOPT_OK;
+  } else {
+    if ( !strcmp(keyword, "USE_GOT") )
+      setflag(idpflags, USE_GOT, *(int*)value != 0);
+    else
+      return IDPOPT_BADKEY;
+    if ( idb_loaded )
+      helper.altset(-1, idpflags);
+    return IDPOPT_OK;
+  }
+}
+
 ssize_t idaapi sw64_t::on_event(ssize_t msgid, va_list va)
 {
   int code = 0;
@@ -131,7 +156,7 @@ ssize_t idaapi sw64_t::on_event(ssize_t msgid, va_list va)
 
     case processor_t::ev_init:
       hook_event_listener(HT_IDB, &idb_listener, &LPH);
-      helper.create("$ loongson");
+      helper.create("$ sunway");
       inf_set_be(false);
       break;
 
@@ -161,6 +186,21 @@ ssize_t idaapi sw64_t::on_event(ssize_t msgid, va_list va)
        return 1;
     }
 
+    case processor_t::ev_set_idp_options:
+      {
+        const char *keyword = va_arg(va, const char *);
+        int value_type = va_arg(va, int);
+        const char *value = va_arg(va, const char *);
+        const char **errmsg = va_arg(va, const char **);
+        bool idb_loaded = va_argi(va, bool);
+        const char *ret = set_idp_options(keyword, value_type, value, idb_loaded);
+        if ( ret == IDPOPT_OK )
+          return 1;
+        if ( errmsg != NULL )
+          *errmsg = ret;
+        return -1;
+      }
+
     case processor_t::ev_is_sp_based:
       {
         int *mode = va_arg(va, int *);
@@ -187,7 +227,7 @@ ssize_t idaapi sw64_t::on_event(ssize_t msgid, va_list va)
   return code;
 }
 
-static const uchar retcode_1[] = { 0x1, 0, 0xA0, 0xBF };
+static const uchar retcode_1[] = { 1, 0, 0xFA, 0x0B };
 static const bytes_t retcodes[] =
 {
   { sizeof(retcode_1), retcode_1 },
