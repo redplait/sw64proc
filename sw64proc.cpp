@@ -270,6 +270,30 @@ void make_jmp(const insn_t *insn)
   }
 }
 
+int track_back_gp(ea_t curr, ea_t &res)
+{
+  func_item_iterator_t fii(get_func(curr), curr);
+  insn_t prev;
+  res = NULL;
+  int state = 0;
+  short off = 0;
+  while ( fii.decode_prev_insn(&prev) )
+  {
+    if ( is_pv_gp(&prev) )
+    {
+      res = prev.ea + (prev.Op3.value << 0x10) + off;
+      return 1;
+    }
+    if ( is_ldi_gp(&prev) )
+    {
+      auto val = get_dword(prev.ea);
+      off = (short)(val & 0xffff);
+      continue;
+    }
+  }
+  return 0;
+}
+
 void emu_insn(const insn_t *insn)
 {
   segment_t *got = get_segm_by_name(".got");
@@ -293,32 +317,28 @@ void emu_insn(const insn_t *insn)
   {
     ea_t ea = insn->ea + (insn->Op3.value << 0x10);
     qsnprintf(comm, sizeof(comm), "%a", ea);
-    set_cmt(insn->ea, comm, false);    
+    set_cmt(insn->ea, comm, false);
+    goto sp;
   }
-  if ( got != NULL && is_ldl_pv(insn) )
+  if ( is_ldl_pv(insn) )
   {
     auto val = get_dword(insn->ea);
-    auto uoff = val & 0xffff;
-    short off;
-    if ( uoff & 0x8000 )
-      off = uoff & 0x7fff;
-    else
-      off = -(0x8000 - (unsigned short)uoff);
-    ea_t ea = got->start_ea + off;
-    qsnprintf(comm, sizeof(comm), "%a", ea);
-    set_cmt(insn->ea, comm, false);    
-    // add xref
-    insn->add_dref(ea, 0, dr_O);
+    short off = (short)(val & 0xffff);
+    ea_t gp = NULL;
+    if ( track_back_gp(insn->ea, gp) )
+    {
+      ea_t ea = gp + off;
+      qsnprintf(comm, sizeof(comm), "%a", ea);
+      set_cmt(insn->ea, comm, false);    
+      // add xref
+      insn->add_dref(ea, 0, dr_O);
+      goto sp;
+    }
   }
   if ( is_ldi_gp(insn) )
   {
     auto val = get_dword(insn->ea);
-    auto uoff = val & 0xffff;
-    short off;
-    if ( uoff & 0x8000 )
-      off = uoff & 0x7fff;
-    else
-      off = -(0x8000 - (unsigned short)uoff);
+    short off = (short)(val & 0xffff);
     func_item_iterator_t fii(get_func(insn->ea), insn->ea);
     insn_t prev;
     if ( fii.decode_prev_insn(&prev) && is_pv_gp(&prev) )
@@ -330,12 +350,7 @@ void emu_insn(const insn_t *insn)
   } else if ( got != NULL && is_ldl(insn) )
   {
     auto val = get_dword(insn->ea);
-    auto uoff = val & 0xffff;
-    short off;
-    if ( uoff & 0x8000 )
-      off = uoff & 0x7fff;
-    else
-      off = -(0x8000 - (unsigned short)uoff);
+    short off = (short)(val & 0xffff);
     func_item_iterator_t fii(get_func(insn->ea), insn->ea);
     insn_t prev;
     if ( fii.decode_prev_insn(&prev) && is_ldih_gp(&prev, insn->Op2.reg) )
