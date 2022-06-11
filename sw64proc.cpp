@@ -54,6 +54,11 @@ int is_fma(uint32 ops)
   return ops == 0x1223 || ops == 0x1423;
 }
 
+int get_fmalit(uint32 val)
+{
+  return (val >> 5) & 0x1f;
+}
+
 int is_fmal(uint32 ops)
 {
   ops >>= 16;
@@ -538,6 +543,18 @@ int sw64disasm(uint32 value, insn_t *insn)
   int zc = (ops & 0xff);
   int has_disp = (ops & 0xf00) == 0xb00; 
   int has_disp17 = (ops & 0x1f00) == 0x1700;
+  if ( ops == 0x122404 )
+  {
+    // vextw/vextf
+    insn->Op1.type = o_reg;
+    insn->Op1.reg = get_rA(value, ops);
+    set_rA_dtype(insn);
+    insn->Op2.type = o_imm;
+    insn->Op2.value = get_fmalit(value);
+    insn->Op3.type = o_reg;
+    insn->Op3.reg = get_rC(value, ops);
+    return 4;
+  }
   if ( ops == 0x82601 )
   {
     // pri_rcsr/pri_wcsr
