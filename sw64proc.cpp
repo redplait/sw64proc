@@ -567,6 +567,19 @@ int sw64disasm(uint32 value, insn_t *insn)
     insn->Op3.reg = get_rB(value, ops);
     return 4;
   }
+  if ( is_fmal(ops) )
+  {
+    insn->Op1.type = o_reg;
+    insn->Op1.reg = get_rA(value, ops);
+    set_rA_dtype(insn);
+    insn->Op2.type = o_reg;
+    insn->Op2.reg = get_rB(value, ops);
+    insn->Op3.type = o_imm;
+    insn->Op3.value = get_fmalit(value);    
+    insn->Op4.type = o_reg;
+    insn->Op4.reg = get_rC(value, ops);
+    return 4;
+  }
   if ( is_fma(ops) )
   {
     insn->Op1.type = o_reg;
