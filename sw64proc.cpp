@@ -37,6 +37,11 @@ int get_rA(uint32 val, uint32 ops)
   return reg;
 }
 
+int get_rpiindex(uint32 val)
+{
+  return val & 0xff;
+}
+
 int get_f3(uint32 val, uint32 ops)
 {
   int reg = (val >> 5) & 0x1f;
@@ -533,6 +538,18 @@ int sw64disasm(uint32 value, insn_t *insn)
   int zc = (ops & 0xff);
   int has_disp = (ops & 0xf00) == 0xb00; 
   int has_disp17 = (ops & 0x1f00) == 0x1700;
+  if ( ops == 0x82601 )
+  {
+    // pri_rcsr/pri_wcsr
+    insn->Op1.type = o_reg;
+    insn->Op1.reg = get_rA(value, ops);
+    set_rA_dtype(insn);
+    insn->Op2.type = o_imm;
+    insn->Op2.value = get_rpiindex(value);
+    insn->Op3.type = o_reg;
+    insn->Op3.reg = get_rB(value, ops);
+    return 4;
+  }
   if ( is_fma(ops) )
   {
     insn->Op1.type = o_reg;
