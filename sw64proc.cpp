@@ -37,6 +37,24 @@ int get_rA(uint32 val, uint32 ops)
   return reg;
 }
 
+int get_f3(uint32 val, uint32 ops)
+{
+  int reg = (val >> 5) & 0x1f;
+  return reg | 32;
+}
+
+int is_fma(uint32 ops)
+{
+  ops >>= 16;
+  return ops == 0x1223 || ops == 0x1423;
+}
+
+int is_fmal(uint32 ops)
+{
+  ops >>= 16;
+  return ops == 0x1224;
+}
+
 ea_t get_b21(ea_t curr, uint32 val)
 {
   // wipe out hi 6 bit for ops
@@ -270,6 +288,11 @@ bool is_reg_alive(const insn_t *insn, int ridx)
   if ( feature & CF_CHG1 )
   {
     if ( insn->Op1.type == o_reg && insn->Op1.reg == ridx )
+      return false;
+  }
+  if ( feature & CF_CHG2 )
+  {
+    if ( insn->Op2.type == o_reg && insn->Op2.reg == ridx )
       return false;
   }
   return true;
@@ -510,6 +533,19 @@ int sw64disasm(uint32 value, insn_t *insn)
   int zc = (ops & 0xff);
   int has_disp = (ops & 0xf00) == 0xb00; 
   int has_disp17 = (ops & 0x1f00) == 0x1700;
+  if ( is_fma(ops) )
+  {
+    insn->Op1.type = o_reg;
+    insn->Op1.reg = get_rA(value, ops);
+    set_rA_dtype(insn);
+    insn->Op2.type = o_reg;
+    insn->Op2.reg = get_rB(value, ops);
+    insn->Op3.type = o_reg;
+    insn->Op3.reg = get_f3(value, ops);
+    insn->Op4.type = o_reg;
+    insn->Op4.reg = get_rC(value, ops);
+    return 4;
+  }
   if ( za == 0xf )
   {
     int op = value >> 26;
@@ -519,9 +555,9 @@ int sw64disasm(uint32 value, insn_t *insn)
       insn->Op1.reg = get_rA(value, ops);
       set_rA_dtype(insn);
       insn->Op2.type = o_reg;
-      insn->Op2.reg = get_rB(value, ops);      
+      insn->Op2.reg = get_rB(value, ops);
       insn->Op3.type = o_reg;
-      insn->Op3.reg = get_rC(value, ops);      
+      insn->Op3.reg = get_rC(value, ops);
       return 4;
     } else if ( op == 0x12 ) // OPCODE_ALU_IMM
     { // from sw64_bpf_gen_format_simple_alu_imm
@@ -563,7 +599,7 @@ int sw64disasm(uint32 value, insn_t *insn)
     insn->Op1.reg = get_rA(value, ops);
     set_rA_dtype(insn);
     insn->Op2.type = o_reg;
-    insn->Op2.reg = get_rB(value, ops);      
+    insn->Op2.reg = get_rB(value, ops);
     insn->Op3.type = o_reg;
     insn->Op3.reg = get_rC(value, ops);      
     return 4;
@@ -574,7 +610,7 @@ int sw64disasm(uint32 value, insn_t *insn)
     insn->Op1.reg = get_rA(value, ops);
     set_rA_dtype(insn);
     insn->Op2.type = o_reg;
-    insn->Op2.reg = get_rB(value, ops);      
+    insn->Op2.reg = get_rB(value, ops);
     return 4;
   }
   if ( za )

@@ -140,7 +140,7 @@ const instruc_t Instructions[] = {
  { "selne", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_selne 11220201 */
  { "sellbc", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_sellbc 11220201 */
  { "sellbs", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_sellbs 11220201 */
- { "vlog", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vlog 12230504 */
+ { "vlog", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vlog 12230504 */
  { "vbicw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vbicw 120504 */
  { "vxorw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vxorw 120504 */
  { "vandw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vandw 120504 */
@@ -188,20 +188,20 @@ const instruc_t Instructions[] = {
  { "setfpec1", 0 }, /* sw64_setfpec1 0 */
  { "setfpec2", 0 }, /* sw64_setfpec2 0 */
  { "setfpec3", 0 }, /* sw64_setfpec3 0 */
- { "fmas", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fmas 12230504 */
- { "fmad", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fmad 12230504 */
- { "fmss", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fmss 12230504 */
- { "fmsd", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fmsd 12230504 */
- { "fnmas", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fnmas 12230504 */
- { "fnmad", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fnmad 12230504 */
- { "fnmss", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fnmss 12230504 */
- { "fnmsd", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fnmsd 12230504 */
- { "fseleq", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fseleq 14230504 */
- { "fselne", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fselne 14230504 */
- { "fsellt", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fsellt 14230504 */
- { "fselle", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fselle 14230504 */
- { "fselgt", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fselgt 14230504 */
- { "fselge", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_fselge 14230504 */
+ { "fmas", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fmas 12230504 */
+ { "fmad", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fmad 12230504 */
+ { "fmss", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fmss 12230504 */
+ { "fmsd", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fmsd 12230504 */
+ { "fnmas", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fnmas 12230504 */
+ { "fnmad", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fnmad 12230504 */
+ { "fnmss", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fnmss 12230504 */
+ { "fnmsd", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fnmsd 12230504 */
+ { "fseleq", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fseleq 14230504 */
+ { "fselne", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fselne 14230504 */
+ { "fsellt", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fsellt 14230504 */
+ { "fselle", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fselle 14230504 */
+ { "fselgt", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fselgt 14230504 */
+ { "fselge", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_fselge 14230504 */
  { "vaddw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vaddw 120504 */
  { "vsubw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vsubw 120504 */
  { "vcmpgew", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vcmpgew 120504 */
@@ -244,31 +244,31 @@ const instruc_t Instructions[] = {
  { "vfmov", CF_CHG1| CF_USE3 }, /* sw64_vfmov 60004 */
  { "vcpyse", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vcpyse 120504 */
  { "vcpysn", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vcpysn 120504 */
- { "vmas", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vmas 12230504 */
- { "vmad", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vmad 12230504 */
- { "vmss", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vmss 12230504 */
- { "vmsd", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vmsd 12230504 */
- { "vnmas", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vnmas 12230504 */
- { "vnmad", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vnmad 12230504 */
- { "vnmss", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vnmss 12230504 */
- { "vnmsd", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vnmsd 12230504 */
- { "vfseleq", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vfseleq 12230504 */
- { "vfsellt", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vfsellt 12230504 */
- { "vfselle", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vfselle 12230504 */
- { "vseleqw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vseleqw 12230504 */
- { "vsellbcw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vsellbcw 12230504 */
- { "vselltw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vselltw 12230504 */
- { "vsellew", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vsellew 12230504 */
- { "vinsw", CF_USE2| CF_USE3 }, /* sw64_vinsw 12240504 */
- { "vinsf", CF_USE2| CF_USE3 }, /* sw64_vinsf 12240504 */
+ { "vmas", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vmas 12230504 */
+ { "vmad", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vmad 12230504 */
+ { "vmss", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vmss 12230504 */
+ { "vmsd", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vmsd 12230504 */
+ { "vnmas", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vnmas 12230504 */
+ { "vnmad", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vnmad 12230504 */
+ { "vnmss", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vnmss 12230504 */
+ { "vnmsd", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vnmsd 12230504 */
+ { "vfseleq", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vfseleq 12230504 */
+ { "vfsellt", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vfsellt 12230504 */
+ { "vfselle", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vfselle 12230504 */
+ { "vseleqw", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vseleqw 12230504 */
+ { "vsellbcw", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vsellbcw 12230504 */
+ { "vselltw", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vselltw 12230504 */
+ { "vsellew", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vsellew 12230504 */
+ { "vinsw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vinsw 12240504 */
+ { "vinsf", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vinsf 12240504 */
  { "vextw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vextw 122404 */
  { "vextf", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vextf 122404 */
  { "vcpyw", CF_USE2| CF_USE3 }, /* sw64_vcpyw 1204 */
  { "vcpyf", CF_USE2| CF_USE3 }, /* sw64_vcpyf 1204 */
- { "vconw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vconw 12230504 */
- { "vshfw", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vshfw 12230504 */
- { "vcons", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vcons 12230504 */
- { "vcond", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vcond 12230504 */
+ { "vconw", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vconw 12230504 */
+ { "vshfw", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vshfw 12230504 */
+ { "vcons", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vcons 12230504 */
+ { "vcond", CF_CHG1| CF_USE2| CF_USE3| CF_USE4 }, /* sw64_vcond 12230504 */
  { "vldw_u", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vldw_u A2704 */
  { "vstw_u", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vstw_u A2704 */
  { "vlds_u", CF_CHG1| CF_USE2| CF_USE3 }, /* sw64_vlds_u A2704 */
